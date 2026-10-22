@@ -8,6 +8,5 @@ menu = {
 }
 
 store.set_menus(menu)
-
 while store.get_state() == States.SYSTEM_INFO_MENU:
     display.system_info_menu()

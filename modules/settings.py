@@ -1,29 +1,34 @@
 # test
-import time
+import uos
 import json
-from modules.assignments import TEMP_SENSOR_PIN
+import random
 from modules.storage import storage
+import modules.utilities as Utilities
+
+debug = Utilities.debug
 
 class Settings:
     def __init__(self):
         self.file_name = "settings.json"
         self.settings_directory = "settings"
-        self.temperature_voltage = TEMP_SENSOR_PIN.read_u16() * (3.3 / 65535.0)
-        self.values = {
-            "version": "v0.1.0", 
-            "freq" : 240000000,
-            "temp" : 27 - (self.temperature_voltage - 0.706) / 0.001721 # in celsius
-        }
-        storage.create_file(f"{self.settings_directory}/{self.file_name}", json.dumps(self.values))
+        self.path = f"{self.settings_directory}/{self.file_name}"
+        # self.values = {
+        #     "timescale": store.get_time_scale(),
+        #     "average_voltage_sample_set": store.get_average_voltage_sample_set(),
+        # }
+        # json_str = json.dumps(self.values)
+        self.settings_file_check = storage.file_check(self.path)
+        self.check_for_settings_file()
+        # self.create_log_file()
 
-    def get_setting(self, setting_key):
-        return self.values[setting_key]
+    # def store_settings(self):
+    #     storage.create_file(self.path, json.dumps(self.values))
     
-    def set_setting(self, setting_key, value):
-        self.values[setting_key] = value
+    # def load_settings(self):
+    #     store.set_time_scale()
+    
+    def check_for_settings_file(self):
+        storage.file_check(self.path)
 
-    def store_settings(self):
-        storage.create_file(f"{self.settings_directory}/{self.file_name}", json.dumps(self.values))
-        
 
 settings = Settings()

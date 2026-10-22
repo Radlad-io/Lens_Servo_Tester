@@ -10,6 +10,6 @@ menu = {
 
 store.set_menus(menu)
 store.set_display_needs_clear(True)
-
+store.set_menu_index(0)
 while store.get_state() == States.CAMERA_CHECK:
     display.camera_testing()

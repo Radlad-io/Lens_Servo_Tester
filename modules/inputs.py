@@ -23,13 +23,18 @@ class Inputs:
         self.long_press_in_progress = False
 
     def rotary_changed(self):
+        value = 0
         if self.previousValue != self.CLK_Pin.value():
             if self.CLK_Pin.value() == 0:
                 if self.DT_Pin.value() == 0:
-                    store.set_menu_index(-1)
+                    # store.set_menu_index(-1)
+                    value = -1
                 else:
-                    store.set_menu_index(1)
+                    # store.set_menu_index(1)
+                    value = 1
             self.previousValue = self.CLK_Pin.value()
+        return value
+        
          
     def button_changed(self):
         #  Button is pressed

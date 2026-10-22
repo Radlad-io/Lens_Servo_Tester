@@ -1,5 +1,5 @@
-# from enum import Enum
 from micropython import const
+# from modules.settings import settings
 
 class States():
     LENS_CHECK = const(100)
@@ -7,24 +7,47 @@ class States():
     MODE_MENU = const(300)
     MAIN_MENU = const(400)
     SETTINGS_MENU = const(500)
+    SETTINGS_MENU_TIMESCALE = const(501)
     SYSTEM_INFO_MENU = const(600)
+
+# states = States()
 
 class Store:
     def __init__(self):
         self.voltage = 0.0
         self.voltage_over_time = []
         self.voltage_data_limit = 64
+        self.average_voltage_sample_set = {
+            "value": 4,
+            "default": 4,
+            "min": 0,
+            "max": 10,
+            "increment": 1.0,
+        }
         self.active_trigger_event = False
         self.trigger_event_limit = 24
         self.record = False
         self.trigger_events = []
-        self.time_scale = 12
+        # TODO: read from storage on boot
+        self.time_scale = {
+            "value": 12,
+            "default": 12,
+            "min": 0,
+            "max": 100,
+            "increment": 1.0,
+        }
         self.display_clear = False
         self.state = States.MODE_MENU
         self.exit = False
         self.long_press = False
         self.menu_index = 0
-        self.menus = {}
+        self.menus = {
+            "exit": States.MAIN_MENU,
+            "actions": [
+                {"Timescale": States.SETTINGS_MENU_TIMESCALE},
+            ] 
+        }
+        self.settings = [self.time_scale, self.average_voltage_sample_set]
 
     def get_record(self):
         return self.record
@@ -40,6 +63,9 @@ class Store:
 
     def get_voltage_over_time(self):
         return self.voltage_over_time
+    
+    def get_voltage_data_limit(self):
+        return self.voltage_data_limit
     
     def set_voltage_over_time(self, value):
         self.voltage_over_time.append(value)
@@ -65,10 +91,10 @@ class Store:
             self.trigger_events.pop(0)
 
     def get_time_scale(self):
-        return self.time_scale
+        return self.time_scale["value"]
     
     def set_time_scale(self, value):
-        self.time_scale = value
+        self.time_scale["value"] = self.time_scale["value"] + value
 
     def get_display_needs_clear(self):
         return self.display_needs_update
@@ -101,8 +127,10 @@ class Store:
         if index < 0:
             index = len(self.menus["actions"])
         self.menu_index = index
-        # print(self.menu_index)
 
+    def reset_menu_index(self):
+        self.menu_index = 0
+        
     def get_menu_index(self):
         return self.menu_index
     
@@ -111,5 +139,12 @@ class Store:
     
     def get_menus(self):
         return self.menus
+    
+    def get_average_voltage_sample_set(self):
+        return self.average_voltage_sample_set["value"]
+    
+    def set_average_voltage_sample_set(self, value):
+        self.average_voltage_sample_set["value"] = self.average_voltage_sample_set["value"] + value
+        # settings.store_settings()
     
 store = Store()

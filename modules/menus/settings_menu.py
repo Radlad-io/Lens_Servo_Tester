@@ -4,10 +4,9 @@ from modules.display import display
 
 
 menu = {
-    "exit": States.LENS_CHECK,
+    "exit": States.MAIN_MENU,
     "actions": [
-        {"Lens Check": States.LENS_CHECK},
-        {"Camera Check": States.CAMERA_CHECK}
+        {"Timescale": States.SETTINGS_MENU_TIMESCALE},
     ]
 }
 

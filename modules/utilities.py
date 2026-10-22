@@ -34,18 +34,17 @@ class Memory:
 
   def measure_memory_usage(self):
     self.mem_allocation = self.gc.mem_alloc() / 1024 # in kb
+    return self.mem_allocation
      
   def check(self):
     self.debug.verbose_msg(f"RAM Used: {self.mem_allocation:.0f}kb / Free RAM: {self.total_mem:.0f}kb")
 
   def clear(self):
-    self.debug.verbose_msg("Clearing Memory")
-    self.measure_memory_usage()
-    self.debug.verbose_msg(f"RAM in Use: {self.mem_allocation:.3f}kb")
+    before = self.measure_memory_usage()
     self.gc.collect()
     self.gc.threshold(gc.mem_free() // 4 + gc.mem_alloc())
-    self.measure_memory_usage()
-    self.debug.verbose_msg(f"RAM in Use: {self.gc.mem_alloc() / 1024:.3f}kb")
+    after = self.measure_memory_usage()
+    self.debug.verbose_msg(f"Memory Cleared: (Before:{before:.3f}kb / After:{after:.3f}kb)")
 
 class Debug:
     def __init__(self):
@@ -63,7 +62,7 @@ class Debug:
       print(f"{self.YELLOW}Exiting: {self.ENDC}{msg}")
 
     def success_msg(self, msg):
-      print(f"{self.GREEN}Warning: {self.ENDC}{msg}")
+      print(f"{self.GREEN}Success: {self.ENDC}{msg}")
 
     def warning_msg(self, msg):
       print(f"{self.YELLOW}Warning: {self.ENDC}{msg}")

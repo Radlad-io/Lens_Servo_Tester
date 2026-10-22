@@ -2,19 +2,23 @@ import _thread
 import time
 import modules.utilities as Utilities
 import modules.assignments as assignments
-from modules.display import display
 from modules.inputs import inputs, Press_Types
 from modules.store import States, store
+from modules.storage import storage
+from modules.logger import logger, LogTypes
 
 # MODULES
 states = States()
 memory = Utilities.Memory()
 debug = Utilities.debug
 
+from modules.settings import Settings
+
 def secondary_thread():
     # Moving this function to a module crashes.
     def router(path):
-        debug.init_msg(path)
+        # debug.init_msg(path)
+        logger.log(LogTypes.INIT, path)
         exec(open(path).read())
         memory.clear()
 
@@ -28,28 +32,29 @@ def secondary_thread():
         if store.get_state() == states.MAIN_MENU:
             router("modules/menus/main_menu.py")
 
-        if store.get_state() == states.SETTINGS_MENU:
-            router("modules/menus/settings_menu.py")
-
         if store.get_state() == states.MODE_MENU:
             router("modules/menus/mode_menu.py")
 
         if store.get_state() == states.SYSTEM_INFO_MENU:
             router("modules/menus/system_info_menu.py")
 
+        if store.get_state() == states.SETTINGS_MENU:
+            router("modules/menus/settings_menu.py")
+
+        if store.get_state() == states.SETTINGS_MENU_TIMESCALE:
+            router("modules/menus/settings/settings_menu_timescale.py")
         else:
             debug.warning_msg(f"No route found ({store.get_state()}). Trying again.")
-
 
 def main_thread():
         # DEFINITIONS
         pot = assignments.LENS_POT
         trigger = assignments.TRIGGER_PIN
-        voltage = 0
-        time_scale = store.get_time_scale()
+        # voltage = 0
         needs_update = False
         time.sleep(0.25)
         while True:
+            time_scale = store.get_time_scale()
             # Tigger & Record Logic
             if store.get_exit():
                 debug.exit_msg("Lens Check: Main Thread")
@@ -72,7 +77,18 @@ def main_thread():
 
             now = time.ticks_ms()
 
-            inputs.rotary_changed()
+            rot_direction = inputs.rotary_changed()
+            if store.get_state() == states.SETTINGS_MENU_TIMESCALE:
+                if rot_direction == -1:
+                    store.set_time_scale(-1)
+                elif rot_direction == 1:
+                    store.set_time_scale(1)
+            else:
+                if rot_direction == -1:
+                    store.set_menu_index(-1)
+                elif rot_direction == 1:
+                    store.set_menu_index(1)
+
             press = inputs.button_changed()
 
             if press == Press_Types.SHORT_PRESS:
@@ -85,17 +101,13 @@ def main_thread():
                     store.set_state(transition_state)
 
             if press == Press_Types.LONG_PRESS:
-                if store.get_state() == States.LENS_CHECK:
-                    store.set_state(store.get_menus()["exit"])
-                elif store.get_state() == States.CAMERA_CHECK:
-                    store.set_state(store.get_menus()["exit"])
-                    print(store.get_state())
+                store.set_state(store.get_menus()["exit"])
 
             store.set_voltage(Utilities.adc_to_voltage(Utilities.map_range(pot.read_u16(), 128, 65535, 0.000, 65535)))
             if now % time_scale == 0:
                 store.set_voltage_over_time(Utilities.adc_to_voltage(Utilities.map_range(pot.read_u16(), 128, 65535, 0.000, 65535)))
             
 # display.splash_screen()
-# time.sleep(5)
+# time.sleep(1)
 gui_thread = _thread.start_new_thread(secondary_thread, ())
 main_thread()

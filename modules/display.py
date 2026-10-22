@@ -3,10 +3,10 @@ from picographics import PicoGraphics, DISPLAY_PICO_DISPLAY_2, PEN_RGB332, PEN_P
 import time
 import math
 from modules.utilities import map_range
-from modules.store import store
+from modules.store import store, States
 
 # store = Store()
-lcd = PicoGraphics(display=DISPLAY_PICO_DISPLAY_2, pen_type=PEN_P8)
+lcd = PicoGraphics(display=DISPLAY_PICO_DISPLAY_2, pen_type=PEN_P8, rotate=180)
 
 class Display:
     def __init__(self):
@@ -18,12 +18,14 @@ class Display:
 
         # PALLET
         self.WHITE = lcd.create_pen(217, 217, 217)
+        self.OFFWHITE = lcd.create_pen(195, 195, 195)
         self.BLACK = lcd.create_pen(0, 0, 0)
         self.DARKGRAY = lcd.create_pen(30, 30, 30)
         self.LIGHTGRAY = lcd.create_pen(88, 88, 88)
         self.RED = lcd.create_pen(255, 0, 0)
         self.GREEN = lcd.create_pen(42, 174, 27)
         self.YELLOW = lcd.create_pen(193, 164, 21)
+        self.LINE_PALLET = self.create_red_hue_pallet()
 
         # MEMU STYES
         self.menu_font_size = 2
@@ -48,6 +50,14 @@ class Display:
         # TEST
         self.pos_x = 0
 
+    def create_red_hue_pallet(self):
+        base = 25
+        pallet = []
+        count = store.get_voltage_data_limit()
+        for i in range(count):
+            hue = map_range(i,0,count, base, 255)
+            pallet.append(lcd.create_pen(int(hue), base, base))
+        return pallet
         
     def splash_screen(self):
         self.clear()
@@ -102,7 +112,7 @@ class Display:
         lcd.set_pen(self.DARKGRAY)
         lcd.rectangle(0, 0, self.WIDTH - header_divide, header_height )
         lcd.set_pen(self.WHITE)
-        lcd.text("Fuji 24x Lens", header_margin * 2, header_margin, self.WIDTH - header_divide + header_margin*2, 2)
+        lcd.text("Lens Testing", header_margin * 2, header_margin, self.WIDTH - header_divide + header_margin*2, 2)
 
         # HEADER - REC INDICATOR
         if store.get_record():
@@ -137,7 +147,7 @@ class Display:
         graph_start = 50
         graph_border_size = 3
         graph_origin_x = int(int(self.WIDTH) / 2 - graph_width / 2 - graph_border_size)
-        # FIXME: (I wrote fixme here but didn't say what an now I have forgoten what I need to fix)
+        # FIXME: (I wrote fixme here but didn't say what and now I have forgoten what I need to fix)
         graph_origin_y = graph_width + graph_border_size * 2
         graph_end_y = graph_start + graph_height + graph_border_size
         graph_segments_x = 10
@@ -173,7 +183,7 @@ class Display:
         lcd.set_pen(self.WHITE)
         
         for i in range(len(graph_data)-2):
-            lcd.set_pen(self.WHITE)
+            lcd.set_pen(self.LINE_PALLET[i])
             pos_x_offset = (self.WIDTH - graph_width) / 2 + graph_border_size
             pos_x_start = (graph_width / (len(graph_data)-1) * i) + pos_x_offset
             pos_y_start = map_range(graph_data[i], 0, 3.3, graph_start, graph_start + graph_height)
@@ -203,17 +213,12 @@ class Display:
         trigger_graph_origin_y = graph_start + graph_height + graph_border_size * 2 + spacing
 
         # Trigger Graph
-        # self._trigger_events_graph()
         lcd.set_pen(self.DARKGRAY)
         events = store.get_trigger_events()
         lcd.rectangle(graph_origin_x,trigger_graph_origin_y,graph_width + graph_border_size * 2, trigger_graph_height)
         lcd.set_pen(self.BLACK)
         lcd.rectangle(int(graph_origin_x + graph_border_size), int(trigger_graph_origin_y + graph_border_size),graph_width,trigger_graph_height-graph_border_size*2)
-        # display.set_pen(self.LIGHTGRAY)
-        # display.rectangle(int(graph_origin_x + graph_border_size) + 40, int(trigger_graph_origin_y + graph_border_size)+graph_border_size, 40, trigger_graph_height-graph_border_size*4)
-        # display.set_pen(self.BLACK)
-        # display.rectangle(int(graph_origin_x + graph_border_size*4) + 40-graph_border_size*2, int(trigger_graph_origin_y + graph_border_size)+graph_border_size*2, 40-graph_border_size*2, trigger_graph_height-graph_border_size*6)
-        
+         
         lcd.set_clip(int(graph_origin_x + graph_border_size), int(trigger_graph_origin_y + graph_border_size+graph_border_size),graph_width,trigger_graph_height-graph_border_size*2-graph_border_size*2)
         for i in range(len(events)):
             current_tick = time.ticks_ms()
@@ -310,52 +315,44 @@ class Display:
 
         lcd.remove_clip()
         self.update()
-
-
-    def draw_graph(self):
-        return
         
     def menu_screen(self, title, menu):
         if store.get_display_needs_clear():
             self.clear()
-        lcd.set_pen(self.BLACK)
-        lcd.rectangle(0, 0, self.WIDTH, self.HEIGHT)
-        lcd.set_pen(self.WHITE)
-        lcd.set_font("bitmap8")
-        title = title
-        size = 3
-        title_margin = 60
         title_height = 65
-        title_x = self.WIDTH / 2 - lcd.measure_text(title, size) / 2
-        title_y = title_margin / size
-        lcd.text(title, int(title_x), int(title_y), self.WIDTH, size)
+        self._menu_title(title)
 
-        
+        item_m = 2
         lcd.set_font("bitmap8")
         menu_items = menu["actions"]
         menu_length = len(menu_items)
+        shift = 0
+        # short_list =
         for i in range(0,menu_length+1):
             item_text = ""
             selected = True if store.get_menu_index() == i  else False
-            if selected:
-                lcd.set_pen(self.menu_item_bg_active)
-            elif i == menu_length:
-                lcd.set_pen(self.BLACK)
+            if i == menu_length:
                 item_text = "Return"
             else:
                 item_text = next(iter(menu_items[i].keys()))
-                lcd.set_pen(self.menu_item_bg)
-            lcd.rectangle(0, self.menu_item_height * i + i*self.menu_item_margin + title_height, self.WIDTH, self.menu_item_height)
+
+            if selected:
+                lcd.set_pen(self.OFFWHITE)
+            elif i == menu_length:
+                lcd.set_pen(self.BLACK)
+            else:
+                lcd.set_pen(self.DARKGRAY)
+            lcd.rectangle(0, self.menu_item_height * i + i*self.menu_item_margin + title_height + int(item_m *i), self.WIDTH, self.menu_item_height)
             
             if selected:
                 lcd.set_pen(self.BLACK)
             else:
                 lcd.set_pen(self.WHITE)
-            
+
             size = 2
             text_margin = 14
             item_y = self.menu_item_height * i + title_height+i*2
-            lcd.text(item_text , 20, int(item_y+text_margin), self.WIDTH, size)
+            lcd.text(item_text , 20, int(item_y+text_margin + (item_m*i)), self.WIDTH, size)
         self.update()    
     
     def _menu_title(self, title):
@@ -364,12 +361,12 @@ class Display:
         lcd.set_pen(self.WHITE)
         lcd.set_font("bitmap6")
         size = 3
-        title_margin = 30
+        title_margin = 50
         title_x = self.WIDTH / 2 - lcd.measure_text(title, size) / 2
         title_y = title_margin / size
         lcd.text(title, int(title_x), int(title_y), self.WIDTH, size)
 
-    def _menu_list(self, items):
+    def _stats_list(self, items):
         margin = 20
         value_x_offset = 135
         item_height = 22
@@ -386,8 +383,29 @@ class Display:
     def system_info_menu(self):
         if store.get_display_needs_clear():
             self.clear()
+        lcd.set_font("bitmap8")
         self._menu_title("System Info")
-        self._menu_list([{"VERSION":"v0.1.0"},{"FREQUENCY":"240MHz"},{"TEMPRATURE":"36 °c"},{"FS STATUS":"Good"},{"LENS CONFIGS":"002"},{"AUTHOR":"Kevin Merinsky"}])
+        self._stats_list([{"VERSION":"v0.1.0"},{"FREQUENCY":"240MHz"},{"TEMPRATURE":"36 °c"},{"FS STATUS":"Good"},{"LENS CONFIGS":"002"},{"AUTHOR":"Kevin Merinsky"}])
+        self.long_press_gui()
+
+    def settings_menu(self, title="set", value=12):
+        if store.get_display_needs_clear():
+            self.clear()
+        self._menu_title(title)
+        lcd.set_font("bitmap8")
+        # ARROW UP
+
+        # lcd.text("↑", 50, 50, self.WIDTH, 2)
+        # VALUE
+        header_h = 75
+        font_size = 8
+        text_w = lcd.measure_text(f"{value}",font_size)
+        center = self.WIDTH /2 - text_w/2 
+        lcd.text(f"{value}", int(center), header_h, self.WIDTH, font_size)
+        # ARROW DOWN
+        # lcd.text("↓", int(self.WIDTH-50), 50, self.WIDTH, 3)
+        # DESCRIPTION
+        self.update()
 
     def clear(self):
         lcd.set_pen(self.BLACK)
@@ -398,3 +416,12 @@ class Display:
         lcd.update()
 
 display = Display()
+
+# menu = {
+#     "exit": States.MODE_MENU,
+#     "actions": [
+#         {"Lens Check": States.LENS_CHECK},
+#         {"Camera Check": States.CAMERA_CHECK},
+#     ]
+# }
+# display.menu_screen("test", menu)

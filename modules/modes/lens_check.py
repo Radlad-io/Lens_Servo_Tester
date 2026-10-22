@@ -15,12 +15,17 @@ menu = {
 
 store.set_menus(menu)
 store.set_display_needs_clear(True)
+store.reset_menu_index()
 
 # DEFINITIONS
 pot = assignments.LENS_POT
 trigger = assignments.TRIGGER_PIN
 voltage = 0
 
+perforance = Performance()
+
 while store.get_state() == States.LENS_CHECK:
+    # perforance.start()
     display.lens_check_screen(voltage, map_range(pot.read_u16(), 0, 65535, 0.000, 1.0))
+    # perforance.measure()
 

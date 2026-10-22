@@ -3,7 +3,7 @@ from modules.store import store, States
 from modules.display import display
 
 menu = {
-    "exit": States.SETTINGS_MENU,
+    "exit": States.MAIN_MENU,
     "actions": [
         {"Lens Check": States.LENS_CHECK},
         {"Camera Check": States.CAMERA_CHECK}

@@ -13,8 +13,8 @@ STORAGE_SPI = SPI(1,
               miso=Pin(8))
 
 # ROTARY ENCODER
-ENCODER_CLK = Pin(0, Pin.IN, Pin.PULL_UP)
-ENCODER_DT = Pin(1, Pin.IN, Pin.PULL_UP)
+ENCODER_CLK = Pin(1, Pin.IN, Pin.PULL_UP)
+ENCODER_DT = Pin(0, Pin.IN, Pin.PULL_UP)
 ENCODER_SW = Pin(2, Pin.IN, Pin.PULL_UP)
 
 # LENS INPUT
